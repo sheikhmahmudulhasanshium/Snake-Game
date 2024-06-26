@@ -19,6 +19,7 @@ const SnakeGame: React.FC = () => {
   const [score, setScore] = useState(0);
   const [speed, setSpeed] = useState(150);
   const [paused, setPaused] = useState(false);
+  const [appleImageObj, setAppleImageObj] = useState<HTMLImageElement | null>(null);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -194,24 +195,31 @@ const SnakeGame: React.FC = () => {
       }
 
       // Draw food as apple image
-      const img = new Image();
-      img.onload = function () {
-        canvasContext.drawImage(img, food[0] * GRID_SIZE, food[1] * GRID_SIZE, GRID_SIZE, GRID_SIZE);
-      };
-      img.src = appleImage.src; // Use the .src property here to get the URL
+      if (appleImageObj) {
+        canvasContext.drawImage(appleImageObj, food[0] * GRID_SIZE, food[1] * GRID_SIZE, GRID_SIZE, GRID_SIZE);
+      }
     }
-  }, [snake, food]);
+  }, [snake, food, direction, appleImageObj]);
 
   const handleRetry = () => {
     initializeGame();
   };
 
+  useEffect(() => {
+    const img = new Image();
+    img.onload = function () {
+      setAppleImageObj(img);
+    };
+    img.src = appleImage.src;
+  }, []);
+
   return (
     <div className="flex justify-center">
       <div className="mt-8">
-        <p className="mb-4 text-lg font-bold text-gray-800">Score: {score}</p>
         {!gameOver && (
           <div className="flex flex-col items-center">
+          <p className="mb-4 text-lg font-bold text-gray-800">Score: {score}</p>
+
             <button onClick={togglePause} className="mb-4 bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-xl ">
               {paused ? 'Resume' : 'Pause'}
             </button>
