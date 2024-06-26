@@ -25,22 +25,15 @@ const SnakeGame: React.FC = () => {
 
   useEffect(() => {
     initializeGame();
+    setupSwipeEvents();
   }, []);
 
   useEffect(() => {
-    const interval = setInterval(moveSnake, speed);
-
-    if (paused || gameOver) {
-      clearInterval(interval);
+    const canvasContext = canvasRef.current?.getContext('2d');
+    if (canvasContext && snake.length > 0) {
+      drawCanvas(canvasContext);
     }
-
-    window.addEventListener('keydown', handleKeyPress);
-
-    return () => {
-      clearInterval(interval);
-      window.removeEventListener('keydown', handleKeyPress);
-    };
-  }, [snake, food, direction, speed, gameOver, paused]);
+  }, [snake, food, direction, appleImageObj]);
 
   const initializeGame = () => {
     const initialSnake = [
@@ -150,59 +143,99 @@ const SnakeGame: React.FC = () => {
     setPaused(!paused);
   };
 
-  useEffect(() => {
-    const canvasContext = canvasRef.current?.getContext('2d');
-    if (canvasContext && snake.length > 0) {
-      canvasContext.clearRect(0, 0, GRID_SIZE * 20, GRID_SIZE * 20);
-
-      // Draw snake head (semi-circle 'D' shape)
-      const [headX, headY] = snake[0];
-      const headSize = GRID_SIZE;
-
-      canvasContext.fillStyle = '#34D399'; // Green color for snake head
-
-      canvasContext.beginPath();
-      if (direction === Direction.Right || direction === Direction.Left) {
-        // Horizontal head
-        const radius = headSize / 2;
-        const centerY = headY * GRID_SIZE + radius;
-        const startX = headX * GRID_SIZE + (direction === Direction.Right ? radius : headSize - radius);
-        const endX = headX * GRID_SIZE + (direction === Direction.Right ? headSize : 0);
-        canvasContext.arc(startX, centerY, radius, Math.PI / 2, -Math.PI / 2, direction === Direction.Right);
-        canvasContext.lineTo(endX, centerY + radius);
-      } else {
-        // Vertical head (default to Up)
-        const radius = headSize / 2;
-        const centerX = headX * GRID_SIZE + radius;
-        const startY = headY * GRID_SIZE + (direction === Direction.Down ? radius : headSize - radius);
-        const endY = headY * GRID_SIZE + (direction === Direction.Down ? headSize : 0);
-        canvasContext.arc(centerX, startY, radius, Math.PI, 0, direction === Direction.Down);
-        canvasContext.lineTo(centerX + radius, endY);
-      }
-      canvasContext.fill();
-
-      // Draw snake body
-      canvasContext.fillStyle = '#22C55E'; // Green color for snake body
-      for (let i = 1; i < snake.length - 1; i++) {
-        canvasContext.fillRect(snake[i][0] * GRID_SIZE, snake[i][1] * GRID_SIZE, GRID_SIZE, GRID_SIZE);
-      }
-
-      // Draw snake tail as square
-      if (snake.length > 1) {
-        const tailX = snake[snake.length - 1][0] * GRID_SIZE;
-        const tailY = snake[snake.length - 1][1] * GRID_SIZE;
-        canvasContext.fillRect(tailX, tailY, GRID_SIZE, GRID_SIZE);
-      }
-
-      // Draw food as apple image
-      if (appleImageObj) {
-        canvasContext.drawImage(appleImageObj, food[0] * GRID_SIZE, food[1] * GRID_SIZE, GRID_SIZE, GRID_SIZE);
-      }
-    }
-  }, [snake, food, direction, appleImageObj]);
-
   const handleRetry = () => {
     initializeGame();
+  };
+
+  const drawCanvas = (ctx: CanvasRenderingContext2D) => {
+    ctx.clearRect(0, 0, GRID_SIZE * 20, GRID_SIZE * 20);
+
+    // Draw snake head (semi-circle 'D' shape)
+    const [headX, headY] = snake[0];
+    const headSize = GRID_SIZE;
+
+    ctx.fillStyle = '#34D399'; // Green color for snake head
+
+    ctx.beginPath();
+    if (direction === Direction.Right || direction === Direction.Left) {
+      // Horizontal head
+      const radius = headSize / 2;
+      const centerY = headY * GRID_SIZE + radius;
+      const startX = headX * GRID_SIZE + (direction === Direction.Right ? radius : headSize - radius);
+      const endX = headX * GRID_SIZE + (direction === Direction.Right ? headSize : 0);
+      ctx.arc(startX, centerY, radius, Math.PI / 2, -Math.PI / 2, direction === Direction.Right);
+      ctx.lineTo(endX, centerY + radius);
+    } else {
+      // Vertical head (default to Up)
+      const radius = headSize / 2;
+      const centerX = headX * GRID_SIZE + radius;
+      const startY = headY * GRID_SIZE + (direction === Direction.Down ? radius : headSize - radius);
+      const endY = headY * GRID_SIZE + (direction === Direction.Down ? headSize : 0);
+      ctx.arc(centerX, startY, radius, Math.PI, 0, direction === Direction.Down);
+      ctx.lineTo(centerX + radius, endY);
+    }
+    ctx.fill();
+
+    // Draw snake body
+    ctx.fillStyle = '#22C55E'; // Green color for snake body
+    for (let i = 1; i < snake.length - 1; i++) {
+      ctx.fillRect(snake[i][0] * GRID_SIZE, snake[i][1] * GRID_SIZE, GRID_SIZE, GRID_SIZE);
+    }
+
+    // Draw snake tail as square
+    if (snake.length > 1) {
+      const tailX = snake[snake.length - 1][0] * GRID_SIZE;
+      const tailY = snake[snake.length - 1][1] * GRID_SIZE;
+      ctx.fillRect(tailX, tailY, GRID_SIZE, GRID_SIZE);
+    }
+
+    // Draw food as apple image
+    if (appleImageObj) {
+      ctx.drawImage(appleImageObj, food[0] * GRID_SIZE, food[1] * GRID_SIZE, GRID_SIZE, GRID_SIZE);
+    }
+  };
+
+  const setupSwipeEvents = () => {
+    let touchstartX: number | null = null;
+    let touchstartY: number | null = null;
+
+    const canvas = canvasRef.current;
+
+    if (!canvas) return;
+
+    canvas.addEventListener('touchstart', (event) => {
+      touchstartX = event.touches[0].clientX;
+      touchstartY = event.touches[0].clientY;
+    });
+
+    canvas.addEventListener('touchmove', (event) => {
+      if (!touchstartX || !touchstartY) return;
+
+      const touchendX = event.touches[0].clientX;
+      const touchendY = event.touches[0].clientY;
+
+      const deltaX = touchendX - touchstartX;
+      const deltaY = touchendY - touchstartY;
+
+      if (Math.abs(deltaX) > Math.abs(deltaY)) {
+        // Horizontal swipe
+        if (deltaX > 0 && direction !== Direction.Left) {
+          setDirection(Direction.Right);
+        } else if (deltaX < 0 && direction !== Direction.Right) {
+          setDirection(Direction.Left);
+        }
+      } else {
+        // Vertical swipe
+        if (deltaY > 0 && direction !== Direction.Up) {
+          setDirection(Direction.Down);
+        } else if (deltaY < 0 && direction !== Direction.Down) {
+          setDirection(Direction.Up);
+        }
+      }
+
+      touchstartX = null;
+      touchstartY = null;
+    });
   };
 
   useEffect(() => {
@@ -213,16 +246,32 @@ const SnakeGame: React.FC = () => {
     img.src = appleImage.src;
   }, []);
 
+  useEffect(() => {
+    const interval = setInterval(moveSnake, speed);
+
+    if (paused || gameOver) {
+      clearInterval(interval);
+    }
+
+    window.addEventListener('keydown', handleKeyPress);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('keydown', handleKeyPress);
+    };
+  }, [snake, food, direction, speed, gameOver, paused]);
+
   return (
     <div className="flex justify-center">
       <div className="mt-8">
         {!gameOver && (
           <div className="flex flex-col items-center">
-          <p className="mb-4 text-lg font-bold text-gray-800">Score: {score}</p>
+            <p className="mb-4 text-lg font-bold text-gray-800">Score: {score}</p>
 
             <button onClick={togglePause} className="mb-4 bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-xl ">
               {paused ? 'Resume' : 'Pause'}
             </button>
+
             <canvas
               ref={canvasRef}
               width={GRID_SIZE * 20}
