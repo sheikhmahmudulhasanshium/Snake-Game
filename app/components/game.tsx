@@ -1,4 +1,5 @@
 "use client"
+
 import React, { useState, useEffect, useRef } from 'react';
 import appleImage from '../../public/apple.png'; // Ensure correct path to your image
 
@@ -20,6 +21,7 @@ const SnakeGame: React.FC = () => {
   const [speed, setSpeed] = useState(150);
   const [paused, setPaused] = useState(false);
   const [appleImageObj, setAppleImageObj] = useState<HTMLImageElement | null>(null);
+  const [gameStarted, setGameStarted] = useState(false);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -145,6 +147,7 @@ const SnakeGame: React.FC = () => {
 
   const handleRetry = () => {
     initializeGame();
+    setGameStarted(true);
   };
 
   const drawCanvas = (ctx: CanvasRenderingContext2D) => {
@@ -261,17 +264,28 @@ const SnakeGame: React.FC = () => {
     };
   }, [snake, food, direction, speed, gameOver, paused]);
 
+  const handlePlay = () => {
+    initializeGame();
+    setGameStarted(true);
+  };
+
   return (
     <div className="flex justify-center">
       <div className="mt-8">
-        {!gameOver && (
+        {!gameStarted && (
+          <div className="flex items-center justify-center">
+            <button onClick={handlePlay} className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-xl">
+              Play
+            </button>
+          </div>
+        )}
+        {gameStarted && !gameOver && (
           <div className="flex flex-col items-center">
             <p className="mb-4 text-lg font-bold text-gray-800">Score: {score}</p>
 
-            <button onClick={togglePause} className="mb-4 bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-xl ">
+            <button onClick={togglePause} className="mb-4 bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-xl">
               {paused ? 'Resume' : 'Pause'}
             </button>
-
             <canvas
               ref={canvasRef}
               width={GRID_SIZE * 20}
@@ -284,10 +298,7 @@ const SnakeGame: React.FC = () => {
           <div className="flex flex-col items-center">
             <p className="mb-4 text-xl font-bold text-red-600">Game Over!</p>
             <p className="mb-4 text-lg">Final Score: {score}</p>
-            <button
-              onClick={handleRetry}
-              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-xl"
-            >
+            <button onClick={handleRetry} className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-xl">
               Retry
             </button>
           </div>
