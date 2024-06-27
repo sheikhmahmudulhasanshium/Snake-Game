@@ -1,27 +1,33 @@
 "use client"
 import React, { useState, useEffect, useRef } from 'react';
-import appleImage from '../../public/apple.png'; // Ensure correct path to your image
+import FoodImage from '../../public/apple.png';
+import SnakeHeadImage from '../../public/snake-head.png'; 
 import JoyStick from './joy-stick';
 import ScoreBoard from './scoreboard';
+
 const GRID_SIZE = 20;
 
 export enum Direction {
-  Up,
-  Down,
-  Left,
-  Right,
+  Up = 'up',
+  Down = 'down',
+  Left = 'left',
+  Right = 'right',
 }
 
 const SnakeGame: React.FC = () => {
   const [snake, setSnake] = useState<number[][]>([]);
-  const [food, setFood] = useState<number[]>([]);
+  const [food, setFood] = useState<{ position: number[], image: HTMLImageElement | null }>({
+    position: [],
+    image: null,
+  });
   const [direction, setDirection] = useState(Direction.Right);
   const [gameOver, setGameOver] = useState(false);
   const [score, setScore] = useState(0);
   const [speed, setSpeed] = useState(150);
   const [paused, setPaused] = useState(false);
-  const [appleImageObj, setAppleImageObj] = useState<HTMLImageElement | null>(null);
+  const [snakeHeadRotation, setSnakeHeadRotation] = useState(0); // State for snake head rotation
   const [gameStarted, setGameStarted] = useState(false);
+  const [snakeHeadImage, setSnakeHeadImage] = useState<HTMLImageElement | null>(null);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -34,7 +40,26 @@ const SnakeGame: React.FC = () => {
     if (canvasContext && snake.length > 0) {
       drawCanvas(canvasContext);
     }
-  }, [snake, food, direction, appleImageObj]);
+  }, [snake, food, direction, snakeHeadRotation]);
+
+  useEffect(() => {
+    const img = new Image();
+    img.onload = function () {
+      setSnakeHeadImage(img as HTMLImageElement); // Type assertion here
+    };
+    img.src = SnakeHeadImage.src;
+  }, []);
+
+  useEffect(() => {
+    const img = new Image();
+    img.onload = function () {
+      setFood((prevFood) => ({
+        ...prevFood,
+        image: img as HTMLImageElement,
+      }));
+    };
+    img.src = FoodImage.src;
+  }, []);
 
   const initializeGame = () => {
     const initialSnake = [
@@ -44,7 +69,10 @@ const SnakeGame: React.FC = () => {
     ];
     setSnake(initialSnake);
 
-    setFood(randomPosition());
+    setFood({
+      position: randomPosition(),
+      image: food.image,
+    });
 
     setDirection(Direction.Right);
     setGameOver(false);
@@ -81,15 +109,19 @@ const SnakeGame: React.FC = () => {
     switch (direction) {
       case Direction.Up:
         head[1]--;
+        setSnakeHeadRotation(180); // Rotate snake head 0 degrees (up)
         break;
       case Direction.Down:
         head[1]++;
+        setSnakeHeadRotation(0); // Rotate snake head 180 degrees (down)
         break;
       case Direction.Left:
         head[0]--;
+        setSnakeHeadRotation(90); // Rotate snake head 270 degrees (left)
         break;
       case Direction.Right:
         head[0]++;
+        setSnakeHeadRotation(270); // Rotate snake head 90 degrees (right)
         break;
     }
 
@@ -100,8 +132,11 @@ const SnakeGame: React.FC = () => {
 
     newSnake.unshift(head);
 
-    if (head[0] === food[0] && head[1] === food[1]) {
-      setFood(randomPosition());
+    if (head[0] === food.position[0] && head[1] === food.position[1]) {
+      setFood({
+        position: randomPosition(),
+        image: food.image,
+      });
       setScore(score + 10);
       setSpeed(speed - 5);
     } else {
@@ -152,31 +187,19 @@ const SnakeGame: React.FC = () => {
   const drawCanvas = (ctx: CanvasRenderingContext2D) => {
     ctx.clearRect(0, 0, GRID_SIZE * 20, GRID_SIZE * 20);
 
-    // Draw snake head (semi-circle 'D' shape)
-    const [headX, headY] = snake[0];
-    const headSize = GRID_SIZE;
+    ctx.save(); // Save the current context state
 
-    ctx.fillStyle = '#34D399'; // Green color for snake head
+    // Rotate canvas by snake head rotation
+    ctx.translate((snake[0][0] + 0.5) * GRID_SIZE, (snake[0][1] + 0.5) * GRID_SIZE); // Translate to the center of the snake head
+    ctx.rotate((snakeHeadRotation * Math.PI) / 180); // Rotate the context
 
-    ctx.beginPath();
-    if (direction === Direction.Right || direction === Direction.Left) {
-      // Horizontal head
-      const radius = headSize / 2;
-      const centerY = headY * GRID_SIZE + radius;
-      const startX = headX * GRID_SIZE + (direction === Direction.Right ? radius : headSize - radius);
-      const endX = headX * GRID_SIZE + (direction === Direction.Right ? headSize : 0);
-      ctx.arc(startX, centerY, radius, Math.PI / 2, -Math.PI / 2, direction === Direction.Right);
-      ctx.lineTo(endX, centerY + radius);
-    } else {
-      // Vertical head (default to Up)
-      const radius = headSize / 2;
-      const centerX = headX * GRID_SIZE + radius;
-      const startY = headY * GRID_SIZE + (direction === Direction.Down ? radius : headSize - radius);
-      const endY = headY * GRID_SIZE + (direction === Direction.Down ? headSize : 0);
-      ctx.arc(centerX, startY, radius, Math.PI, 0, direction === Direction.Down);
-      ctx.lineTo(centerX + radius, endY);
+    // Draw snake head as image (SnakeHeadImage)
+    if (snakeHeadImage) {
+      ctx.drawImage(snakeHeadImage, -GRID_SIZE / 2, -GRID_SIZE / 2, GRID_SIZE, GRID_SIZE); // Draw the rotated image
     }
-    ctx.fill();
+
+    // Restore canvas state
+    ctx.restore();
 
     // Draw snake body
     ctx.fillStyle = '#22C55E'; // Green color for snake body
@@ -191,19 +214,11 @@ const SnakeGame: React.FC = () => {
       ctx.fillRect(tailX, tailY, GRID_SIZE, GRID_SIZE);
     }
 
-    // Draw food as apple image
-    if (appleImageObj) {
-      ctx.drawImage(appleImageObj, food[0] * GRID_SIZE, food[1] * GRID_SIZE, GRID_SIZE, GRID_SIZE);
+    // Draw food as image
+    if (food.image) {
+      ctx.drawImage(food.image, food.position[0] * GRID_SIZE, food.position[1] * GRID_SIZE, GRID_SIZE, GRID_SIZE);
     }
   };
-
-  useEffect(() => {
-    const img = new Image();
-    img.onload = function () {
-      setAppleImageObj(img);
-    };
-    img.src = appleImage.src;
-  }, []);
 
   useEffect(() => {
     const interval = setInterval(moveSnake, speed);
@@ -226,6 +241,8 @@ const SnakeGame: React.FC = () => {
   };
 
   const handleDirection = (dir: string) => {
+    if (paused || gameOver) return;
+
     switch (dir) {
       case 'up':
         if (direction !== Direction.Down) setDirection(Direction.Up);
@@ -245,7 +262,7 @@ const SnakeGame: React.FC = () => {
   };
 
   return (
-    <div className="flex justify-center ">
+    <div className="flex justify-center">
       <div className="mt-8">
         <ScoreBoard
           score={score}
@@ -257,7 +274,7 @@ const SnakeGame: React.FC = () => {
           handleRetry={handleRetry}
         />
 
-        {gameStarted && !gameOver&&(
+        {gameStarted && !gameOver && (
           <div className="flex flex-col items-center">
             <canvas
               ref={canvasRef}
