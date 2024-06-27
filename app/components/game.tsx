@@ -294,7 +294,7 @@ const SnakeGame: React.FC = () => {
             />
           </div>
         )}
-        {gameOver && (
+        {gameStarted && gameOver && (
           <div className="flex flex-col items-center">
             <p className="mb-4 text-xl font-bold text-red-600">Game Over!</p>
             <p className="mb-4 text-lg">Final Score: {score}</p>
