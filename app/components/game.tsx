@@ -1,8 +1,9 @@
-"use client"
+"use client";
 import React, { useState, useEffect, useRef } from 'react';
 import FoodImage from '../../public/apple.png';
-import SnakeHeadImage from '../../public/snake-head.png'; 
+import SnakeHeadImage from '../../public/snake-head.png';
 import SnakeBodyImage from '../../public/snake-body.png'; // Import snake body image
+import SnakeTailImage from '../../public/snake-tail.png';
 import JoyStick from './joy-stick';
 import ScoreBoard from './scoreboard';
 
@@ -27,9 +28,13 @@ const SnakeGame: React.FC = () => {
   const [speed, setSpeed] = useState(150);
   const [paused, setPaused] = useState(false);
   const [snakeHeadRotation, setSnakeHeadRotation] = useState(0); // State for snake head rotation
+  const [snakeBodyRotations, setSnakeBodyRotations] = useState<number[]>([]); // State for snake body rotations
+  const [snakeTailRotation, setSnakeTailRotation] = useState(270); // State for snake tail rotation
+  
   const [gameStarted, setGameStarted] = useState(false);
   const [snakeHeadImage, setSnakeHeadImage] = useState<HTMLImageElement | null>(null);
   const [snakeBodyImage, setSnakeBodyImage] = useState<HTMLImageElement | null>(null);
+  const [snakeTailImage, setSnakeTailImage] = useState<HTMLImageElement | null>(null); // State for snake tail image
   
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -42,7 +47,7 @@ const SnakeGame: React.FC = () => {
     if (canvasContext && snake.length > 0) {
       drawCanvas(canvasContext);
     }
-  }, [snake, food, direction, snakeHeadRotation, snakeBodyImage]); // Include snakeBodyImage in dependencies
+  }, [snake, food, direction, snakeHeadRotation, snakeTailRotation, snakeBodyRotations, snakeBodyImage, snakeTailImage]); // Include snakeBodyRotations and snakeTailRotation in dependencies
 
   useEffect(() => {
     const img = new Image();
@@ -58,6 +63,14 @@ const SnakeGame: React.FC = () => {
       setSnakeBodyImage(img as HTMLImageElement); // Type assertion here
     };
     img.src = SnakeBodyImage.src;
+  }, []);
+
+  useEffect(() => {
+    const img = new Image();
+    img.onload = function () {
+      setSnakeTailImage(img as HTMLImageElement); // Type assertion here
+    };
+    img.src = SnakeTailImage.src;
   }, []);
 
   useEffect(() => {
@@ -89,6 +102,9 @@ const SnakeGame: React.FC = () => {
     setScore(0);
     setSpeed(150);
     setPaused(false);
+    setSnakeHeadRotation(270); // Reset head rotation
+    setSnakeTailRotation(270); // Reset tail rotation
+    setSnakeBodyRotations([270, 270]); // Reset body rotations
   };
 
   const randomPosition = (): number[] => [
@@ -115,6 +131,7 @@ const SnakeGame: React.FC = () => {
 
     const newSnake = [...snake];
     const head = [...newSnake[0]];
+    const tail = [...newSnake[newSnake.length - 1]];
 
     switch (direction) {
       case Direction.Up:
@@ -153,6 +170,39 @@ const SnakeGame: React.FC = () => {
       newSnake.pop();
     }
 
+    // Update body rotations
+    const newBodyRotations = [];
+    for (let i = 1; i < newSnake.length - 1; i++) {
+      const current = newSnake[i];
+      const previous = newSnake[i - 1];
+      const next = newSnake[i + 1];
+
+      if (current[0] < previous[0]) {
+        newBodyRotations.push(270); // Left
+      } else if (current[0] > previous[0]) {
+        newBodyRotations.push(90); // Right
+      } else if (current[1] < previous[1]) {
+        newBodyRotations.push(180); // Up
+      } else if (current[1] > previous[1]) {
+        newBodyRotations.push(0); // Down
+      }
+    }
+
+    // Update tail rotation
+    const newTail = newSnake[newSnake.length - 1];
+    const secondLast = newSnake[newSnake.length - 2];
+
+    if (newTail[0] < secondLast[0]) {
+      setSnakeTailRotation(0); // Left
+    } else if (newTail[0] > secondLast[0]) {
+      setSnakeTailRotation(180); // Right
+    } else if (newTail[1] < secondLast[1]) {
+      setSnakeTailRotation(90); // Up
+    } else if (newTail[1] > secondLast[1]) {
+      setSnakeTailRotation(270); // Down
+    }
+
+    setSnakeBodyRotations(newBodyRotations);
     setSnake(newSnake);
   };
 
@@ -211,19 +261,32 @@ const SnakeGame: React.FC = () => {
     // Restore canvas state
     ctx.restore();
 
-    // Draw snake body as images
+    // Draw snake body as images with rotations
     if (snakeBodyImage) {
       for (let i = 1; i < snake.length - 1; i++) {
-        ctx.drawImage(snakeBodyImage, snake[i][0] * GRID_SIZE, snake[i][1] * GRID_SIZE, GRID_SIZE, GRID_SIZE);
+        const x = snake[i][0] * GRID_SIZE;
+        const y = snake[i][1] * GRID_SIZE;
+        ctx.save();
+        ctx.translate(x + GRID_SIZE / 2, y + GRID_SIZE / 2);
+        ctx.rotate((snakeBodyRotations[i - 1] * Math.PI) / 180);
+        ctx.drawImage(snakeBodyImage, -GRID_SIZE / 2, -GRID_SIZE / 2, GRID_SIZE, GRID_SIZE);
+        ctx.restore();
       }
     }
 
-    // Draw snake tail as square
-    if (snake.length > 1) {
+    // Draw snake tail with rotation
+    if (snake.length > 1 && snakeTailImage) {
       const tailX = snake[snake.length - 1][0] * GRID_SIZE;
       const tailY = snake[snake.length - 1][1] * GRID_SIZE;
-      ctx.fillStyle = '#22C55E'; // Green color for snake tail
-      ctx.fillRect(tailX, tailY, GRID_SIZE, GRID_SIZE);
+
+      ctx.save(); // Save the current context state
+
+      ctx.translate((tailX + GRID_SIZE / 2), (tailY + GRID_SIZE / 2)); // Translate to the center of the snake tail
+      ctx.rotate((snakeTailRotation * Math.PI) / 180); // Rotate the context
+
+      ctx.drawImage(snakeTailImage, -GRID_SIZE / 2, -GRID_SIZE / 2, GRID_SIZE, GRID_SIZE); // Draw the rotated image
+
+      ctx.restore(); // Restore canvas state
     }
 
     // Draw food as image
