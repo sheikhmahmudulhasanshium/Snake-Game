@@ -1,11 +1,11 @@
 "use client"
-
 import React, { useState, useEffect, useRef } from 'react';
 import appleImage from '../../public/apple.png'; // Ensure correct path to your image
-
+import JoyStick from './joy-stick';
+import ScoreBoard from './scoreboard';
 const GRID_SIZE = 20;
 
-enum Direction {
+export enum Direction {
   Up,
   Down,
   Left,
@@ -27,7 +27,6 @@ const SnakeGame: React.FC = () => {
 
   useEffect(() => {
     initializeGame();
-    setupSwipeEvents();
   }, []);
 
   useEffect(() => {
@@ -198,49 +197,6 @@ const SnakeGame: React.FC = () => {
     }
   };
 
-  const setupSwipeEvents = () => {
-    let touchstartX: number | null = null;
-    let touchstartY: number | null = null;
-
-    const canvas = canvasRef.current;
-
-    if (!canvas) return;
-
-    canvas.addEventListener('touchstart', (event) => {
-      touchstartX = event.touches[0].clientX;
-      touchstartY = event.touches[0].clientY;
-    });
-
-    canvas.addEventListener('touchmove', (event) => {
-      if (!touchstartX || !touchstartY) return;
-
-      const touchendX = event.touches[0].clientX;
-      const touchendY = event.touches[0].clientY;
-
-      const deltaX = touchendX - touchstartX;
-      const deltaY = touchendY - touchstartY;
-
-      if (Math.abs(deltaX) > Math.abs(deltaY)) {
-        // Horizontal swipe
-        if (deltaX > 0 && direction !== Direction.Left) {
-          setDirection(Direction.Right);
-        } else if (deltaX < 0 && direction !== Direction.Right) {
-          setDirection(Direction.Left);
-        }
-      } else {
-        // Vertical swipe
-        if (deltaY > 0 && direction !== Direction.Up) {
-          setDirection(Direction.Down);
-        } else if (deltaY < 0 && direction !== Direction.Down) {
-          setDirection(Direction.Up);
-        }
-      }
-
-      touchstartX = null;
-      touchstartY = null;
-    });
-  };
-
   useEffect(() => {
     const img = new Image();
     img.onload = function () {
@@ -269,38 +225,47 @@ const SnakeGame: React.FC = () => {
     setGameStarted(true);
   };
 
+  const handleDirection = (dir: string) => {
+    switch (dir) {
+      case 'up':
+        if (direction !== Direction.Down) setDirection(Direction.Up);
+        break;
+      case 'down':
+        if (direction !== Direction.Up) setDirection(Direction.Down);
+        break;
+      case 'left':
+        if (direction !== Direction.Right) setDirection(Direction.Left);
+        break;
+      case 'right':
+        if (direction !== Direction.Left) setDirection(Direction.Right);
+        break;
+      default:
+        break;
+    }
+  };
+
   return (
     <div className="flex justify-center">
       <div className="mt-8">
-        {!gameStarted && (
-          <div className="flex items-center justify-center">
-            <button onClick={handlePlay} className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-xl">
-              Play
-            </button>
-          </div>
-        )}
-        {gameStarted && !gameOver && (
-          <div className="flex flex-col items-center">
-            <p className="mb-4 text-lg font-bold text-gray-800">Score: {score}</p>
+        <ScoreBoard
+          score={score}
+          gameStarted={gameStarted}
+          gameOver={gameOver}
+          paused={paused}
+          handlePlay={handlePlay}
+          togglePause={togglePause}
+          handleRetry={handleRetry}
+        />
 
-            <button onClick={togglePause} className="mb-4 bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-xl">
-              {paused ? 'Resume' : 'Pause'}
-            </button>
+        {gameStarted && !gameOver&&(
+          <div className="flex flex-col items-center">
             <canvas
               ref={canvasRef}
               width={GRID_SIZE * 20}
               height={GRID_SIZE * 20}
               style={{ border: '6px solid', borderColor: '#BC4A3C' }}
             />
-          </div>
-        )}
-        {gameStarted && gameOver && (
-          <div className="flex flex-col items-center">
-            <p className="mb-4 text-xl font-bold text-red-600">Game Over!</p>
-            <p className="mb-4 text-lg">Final Score: {score}</p>
-            <button onClick={handleRetry} className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-xl">
-              Retry
-            </button>
+            <JoyStick handleDirection={handleDirection} togglePause={togglePause} />
           </div>
         )}
       </div>
