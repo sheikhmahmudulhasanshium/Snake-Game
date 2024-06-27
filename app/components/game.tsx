@@ -245,7 +245,7 @@ const SnakeGame: React.FC = () => {
   };
 
   return (
-    <div className="flex justify-center">
+    <div className="flex justify-center ">
       <div className="mt-8">
         <ScoreBoard
           score={score}

@@ -14,21 +14,21 @@ interface JoyStickProps {
 
 const JoyStick: React.FC<JoyStickProps> = ({ handleDirection, togglePause }) => {
   return (
-    <div className="grid grid-cols-3 gap-4 text-white text-3xl my-8 absolute bottom-0 left-0 right-0 mx-8">
-      <div className="col-span-3 flex justify-center items-center bg-gray-700 hover:bg-gray-600 rounded-lg p-4 focus:outline-none">
-        <FaChevronCircleUp onClick={() => handleDirection('up')} />
+    <div className="grid grid-cols-3 gap-4 text-white text-3xl my-8  bottom-12 left-0 right-0 mx-8 opacity-25 sticky">
+      <div onClick={() => handleDirection('up')} className="col-span-3 flex justify-center items-center bg-gray-700 hover:bg-gray-600 rounded-lg p-4 focus:outline-none">
+        <FaChevronCircleUp  />
       </div>
-      <div className="flex justify-center items-center bg-gray-700 hover:bg-gray-600 rounded-lg p-4 focus:outline-none">
-        <FaChevronCircleLeft onClick={() => handleDirection('left')} />
+      <div onClick={() => handleDirection('left')} className="flex justify-center items-center bg-gray-700 hover:bg-gray-600 rounded-lg p-4 focus:outline-none">
+        <FaChevronCircleLeft  />
       </div>
-      <div className="flex justify-center items-center bg-gray-700 hover:bg-gray-600 rounded-lg p-4 focus:outline-none">
-        <FaCirclePause onClick={togglePause} />
+      <div onClick={togglePause}  className="flex justify-center items-center bg-gray-700 hover:bg-gray-600 rounded-lg p-4 focus:outline-none">
+        <FaCirclePause />
       </div>
-      <div className="flex justify-center items-center bg-gray-700 hover:bg-gray-600 rounded-lg p-4 focus:outline-none">
-        <FaChevronCircleRight onClick={() => handleDirection('right')} />
+      <div onClick={() => handleDirection('right')} className="flex justify-center items-center bg-gray-700 hover:bg-gray-600 rounded-lg p-4 focus:outline-none">
+        <FaChevronCircleRight />
       </div>
-      <div className="col-span-3 flex justify-center items-center bg-gray-700 hover:bg-gray-600 rounded-lg p-4 focus:outline-none">
-        <FaChevronCircleDown onClick={() => handleDirection('down')} />
+      <div onClick={() => handleDirection('down')}  className="col-span-3 flex justify-center items-center bg-gray-700 hover:bg-gray-600 rounded-lg p-4 focus:outline-none">
+        <FaChevronCircleDown  />
       </div>
     </div>
   );

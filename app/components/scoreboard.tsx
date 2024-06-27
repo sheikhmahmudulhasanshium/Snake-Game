@@ -1,5 +1,6 @@
+import Image from 'next/image';
 import React from 'react';
-
+import logo from '../../public/snake-logo.png'
 interface ScoreBoardProps {
   score: number;
   gameStarted: boolean;
@@ -36,9 +37,10 @@ const ScoreBoard: React.FC<ScoreBoardProps> = ({
 
       {gameStarted && gameOver && (
         <>
+          
           <p className="mb-4 text-xl font-bold text-red-600">Game Over!</p>
-          <p className="mb-4 text-lg">Final Score: {score}</p>
-
+          <p className=" text-lg">Final Score: {score}</p>
+          <Image src={logo} alt='Logo' width={200} height={200}/>
           <button
             onClick={handleRetry}
             className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-xl"
@@ -49,7 +51,9 @@ const ScoreBoard: React.FC<ScoreBoardProps> = ({
       )}
 
       {!gameStarted && (
-        <div className="flex items-center justify-center">
+        <div className="flex items-center justify-center flex-col">
+          <Image src={logo} alt='Logo' width={200} height={200}/>
+
           <button
             onClick={handlePlay}
             className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-xl"
