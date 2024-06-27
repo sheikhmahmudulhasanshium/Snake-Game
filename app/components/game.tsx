@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import FoodImage from '../../public/apple.png';
 import SnakeHeadImage from '../../public/snake-head.png'; 
+import SnakeBodyImage from '../../public/snake-body.png'; // Import snake body image
 import JoyStick from './joy-stick';
 import ScoreBoard from './scoreboard';
 
@@ -28,7 +29,8 @@ const SnakeGame: React.FC = () => {
   const [snakeHeadRotation, setSnakeHeadRotation] = useState(0); // State for snake head rotation
   const [gameStarted, setGameStarted] = useState(false);
   const [snakeHeadImage, setSnakeHeadImage] = useState<HTMLImageElement | null>(null);
-
+  const [snakeBodyImage, setSnakeBodyImage] = useState<HTMLImageElement | null>(null);
+  
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -40,7 +42,7 @@ const SnakeGame: React.FC = () => {
     if (canvasContext && snake.length > 0) {
       drawCanvas(canvasContext);
     }
-  }, [snake, food, direction, snakeHeadRotation]);
+  }, [snake, food, direction, snakeHeadRotation, snakeBodyImage]); // Include snakeBodyImage in dependencies
 
   useEffect(() => {
     const img = new Image();
@@ -48,6 +50,14 @@ const SnakeGame: React.FC = () => {
       setSnakeHeadImage(img as HTMLImageElement); // Type assertion here
     };
     img.src = SnakeHeadImage.src;
+  }, []);
+  
+  useEffect(() => {
+    const img = new Image();
+    img.onload = function () {
+      setSnakeBodyImage(img as HTMLImageElement); // Type assertion here
+    };
+    img.src = SnakeBodyImage.src;
   }, []);
 
   useEffect(() => {
@@ -201,16 +211,18 @@ const SnakeGame: React.FC = () => {
     // Restore canvas state
     ctx.restore();
 
-    // Draw snake body
-    ctx.fillStyle = '#22C55E'; // Green color for snake body
-    for (let i = 1; i < snake.length - 1; i++) {
-      ctx.fillRect(snake[i][0] * GRID_SIZE, snake[i][1] * GRID_SIZE, GRID_SIZE, GRID_SIZE);
+    // Draw snake body as images
+    if (snakeBodyImage) {
+      for (let i = 1; i < snake.length - 1; i++) {
+        ctx.drawImage(snakeBodyImage, snake[i][0] * GRID_SIZE, snake[i][1] * GRID_SIZE, GRID_SIZE, GRID_SIZE);
+      }
     }
 
     // Draw snake tail as square
     if (snake.length > 1) {
       const tailX = snake[snake.length - 1][0] * GRID_SIZE;
       const tailY = snake[snake.length - 1][1] * GRID_SIZE;
+      ctx.fillStyle = '#22C55E'; // Green color for snake tail
       ctx.fillRect(tailX, tailY, GRID_SIZE, GRID_SIZE);
     }
 
