@@ -14,7 +14,7 @@ interface JoyStickProps {
 
 const JoyStick: React.FC<JoyStickProps> = ({ handleDirection, togglePause }) => {
   return (
-    <div className="grid grid-cols-3 gap-4 text-white text-3xl my-8  bottom-12 left-0 right-0 mx-8 opacity-25 sticky">
+    <div className="grid grid-cols-3 gap-4 text-white text-3xl my-8  bottom-12 left-0 right-0 mx-8 opacity-25 sticky lg:hidden md:hidden sm:visible visible">
       <div onClick={() => handleDirection('up')} className="col-span-3 flex justify-center items-center bg-gray-700 hover:bg-gray-600 rounded-lg p-4 focus:outline-none">
         <FaChevronCircleUp  />
       </div>
